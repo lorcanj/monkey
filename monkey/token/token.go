@@ -7,29 +7,28 @@ type Token struct {
 	Literal string
 }
 
-const {
+const (
 	ILLEGAL = "ILLEGAL"
-	EOF = "EOF"
+	EOF     = "EOF"
 
 	// Identifiers + literals
 	IDENT = "IDENT" // add, foobar, x, y, ...
-	INT = "INT" // 123456
+	INT   = "INT"   // 123456
 
 	// Operators
 	ASSIGN = "="
-	PLUS = "+"
+	PLUS   = "+"
 
 	// Delimeters
-	 COMMA = ","
-	 SEMICOLON = ";"
+	COMMA     = ","
+	SEMICOLON = ";"
 
-	 LBRACKET = "("
-	 RBRACKET = ")"
-	 LBRACE = "{"
-	 RBRACE = "}"
+	LBRACKET = "("
+	RBRACKET = ")"
+	LBRACE   = "{"
+	RBRACE   = "}"
 
-	 // Keywords
-	 FUNCTION = "FUNCTION"
-	 LET = "LET"
-
-}
+	// Keywords
+	FUNCTION = "FUNCTION"
+	LET      = "LET"
+)
