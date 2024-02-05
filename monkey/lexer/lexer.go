@@ -1,4 +1,3 @@
-// lexer/lexer.go
 package lexer
 
 import "monkey/token"
