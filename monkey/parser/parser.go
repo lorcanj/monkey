@@ -1,6 +1,7 @@
 package parser
 
 import (
+	"fmt"
 	"monkey/ast"
 	"monkey/lexer"
 	"monkey/token"
@@ -11,18 +12,33 @@ type Parser struct {
 
 	curToken  token.Token
 	peekToken token.Token
+	errors    []string
 }
 
 func New(l *lexer.Lexer) *Parser {
 
 	// want to check what the below is doing
-	p := &Parser{l: l}
+	p := &Parser{
+		l:      l,
+		errors: []string{},
+	}
 
 	// Read two tokens, so curToken and peekToken are set
 	p.NextToken()
 	p.NextToken()
 
 	return p
+}
+
+func (p *Parser) Errors() []string {
+	return p.errors
+}
+
+func (p *Parser) peekError(t token.TokenType) {
+	msg := fmt.Sprintf("expected next token to be %s, got %s instead",
+		t, p.peekToken.Type)
+	// do we now want to add it to the errors array?
+	p.errors = append(p.errors, msg)
 }
 
 // on first call, curToken is empty and peek token is set to the first
@@ -75,7 +91,9 @@ func (p *Parser) parseLetStatement() ast.Statement {
 		return nil
 	}
 
-	// at this point p.curToken should be the equals sign
+	// want to double check whether the below is being correctly assigned
+	// as not 100% sure
+	// might want to add another unit test
 	stmt.Name = &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal}
 
 	// could alter this because no point doing the assignment above when the below fails
@@ -107,6 +125,7 @@ func (p *Parser) expectPeek(t token.TokenType) bool {
 		p.NextToken()
 		return true
 	} else {
+		p.peekError(t)
 		return false
 	}
 }

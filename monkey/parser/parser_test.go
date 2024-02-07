@@ -20,6 +20,7 @@ func TestLetStatements(t *testing.T) {
 	// program will be a pointer to an instance of
 	// the ast which holds a list of statements
 	program := p.ParseProgram()
+	checkParserErrors(t, p)
 	// shouldn't be nil because our parser should be able to parse
 	// let statements at this point
 	if program == nil {
@@ -75,4 +76,17 @@ func testLetStatement(t *testing.T, s ast.Statement, name string) bool {
 	}
 
 	return true
+}
+
+func checkParserErrors(t *testing.T, p *Parser) {
+	errors := p.Errors()
+	if len(errors) == 0 {
+		return
+	}
+
+	t.Errorf("parser has %d errors", len(errors))
+	for _, msg := range errors {
+		t.Errorf("parser error: %q", msg)
+	}
+	t.FailNow()
 }
