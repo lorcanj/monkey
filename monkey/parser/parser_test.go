@@ -78,6 +78,8 @@ func testLetStatement(t *testing.T, s ast.Statement, name string) bool {
 	return true
 }
 
+// TODO: might be worth at some point adding line and col numbers to the output
+// to make it easier to spot where the issues are
 func checkParserErrors(t *testing.T, p *Parser) {
 	errors := p.Errors()
 	if len(errors) == 0 {
@@ -89,4 +91,47 @@ func checkParserErrors(t *testing.T, p *Parser) {
 		t.Errorf("parser error: %q", msg)
 	}
 	t.FailNow()
+}
+
+func TestReturnStatements(t *testing.T) {
+	input := `
+		return 5;
+		return 10;
+		return 989389382;
+		`
+	l := lexer.New(input)
+	p := New(l)
+
+	// what is the output of the below?
+	program := p.ParseProgram()
+	// can do this but won't currently do anything yet
+	checkParserErrors(t, p)
+	// probably should create a separate function as duplicating code here
+	if program == nil {
+		t.Fatalf("ParseProgram() returned nil")
+	}
+
+	// again create a separate function
+	// or one function for these all to be called, will be ugly otherwise
+	if len(program.Statements) != 3 {
+		t.Fatalf("program.Statements does not contain 3 statements. got=%d",
+			len(program.Statements))
+	}
+
+	for _, stmt := range program.Statements {
+		// want to check what the below is doing
+		// is this creating an ast.ReturnStatement node from the stmt
+		// and if it fails then the bool ok is set to false
+		returnStmt, ok := stmt.(*ast.ReturnStatement)
+
+		if !ok {
+			t.Errorf("stmt not *ast.ReturnStatement. got%T", stmt)
+			continue
+		}
+		// so a return statment should
+		if returnStmt.TokenLiteral() != "return" {
+			t.Errorf("returnStmt.TokenLiteral not 'return', got %q", returnStmt.TokenLiteral())
+		}
+		// currently this does not include expressions
+	}
 }

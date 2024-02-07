@@ -75,9 +75,22 @@ func (p *Parser) parseStatement() ast.Statement {
 	switch p.curToken.Type {
 	case token.LET:
 		return p.parseLetStatement()
+	case token.RETURN:
+		return p.parseReturnStatement()
 	default:
 		return nil
 	}
+}
+
+func (p *Parser) parseReturnStatement() ast.Statement {
+	stmt := &ast.ReturnStatement{Token: p.curToken}
+
+	p.NextToken()
+
+	for !p.curTokenIs(token.SEMICOLON) {
+		p.NextToken()
+	}
+	return stmt
 }
 
 // why should this pass the pointer and the one above pass the value itself??
