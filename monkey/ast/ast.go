@@ -120,3 +120,14 @@ func (i *Identifier) expressionNode()      {}
 func (i *Identifier) TokenLiteral() string { return i.Token.Literal }
 
 func (i *Identifier) String() string { return i.Value }
+
+// this is an expression so will need to implement the
+// Expression identifier
+type IntegerLiteral struct {
+	Token token.Token // will be token.INT in this case
+	Value int64
+}
+
+func (il *IntegerLiteral) expressionNode()      {}
+func (il *IntegerLiteral) TokenLiteral() string { return il.Token.Literal }
+func (il *IntegerLiteral) String() string       { return il.TokenLiteral() }
