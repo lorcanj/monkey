@@ -2,6 +2,7 @@ package parser
 
 import (
 	"monkey/ast"
+	"monkey/helper_functions"
 	"monkey/lexer"
 	"testing"
 )
@@ -27,10 +28,10 @@ func TestLetStatements(t *testing.T) {
 		t.Fatalf("ParseProgram() returned nil")
 	}
 
-	if len(program.Statements) != 3 {
-		t.Fatalf("program.Statements does not contain 3 statements. got=%d",
-			len(program.Statements))
-	}
+	// added for readability
+	// could add something that parses the number of statements by counting the number of newline characters maybe?
+	expectedLength := 3
+	helper_functions.CheckProgramLength(t, len(program.Statements), expectedLength)
 
 	tests := []struct {
 		expectedIdentifier string
@@ -111,12 +112,10 @@ func TestReturnStatements(t *testing.T) {
 		t.Fatalf("ParseProgram() returned nil")
 	}
 
-	// again create a separate function
-	// or one function for these all to be called, will be ugly otherwise
-	if len(program.Statements) != 3 {
-		t.Fatalf("program.Statements does not contain 3 statements. got=%d",
-			len(program.Statements))
-	}
+	// added for readability
+	// could add something that parses the number of statements by counting the number of newline characters maybe?
+	expectedLength := 3
+	helper_functions.CheckProgramLength(t, len(program.Statements), expectedLength)
 
 	for _, stmt := range program.Statements {
 		// want to check what the below is doing
@@ -144,10 +143,10 @@ func TestIdentifierExpression(t *testing.T) {
 	program := p.ParseProgram()
 	checkParserErrors(t, p)
 
-	if len(program.Statements) != 1 {
-		t.Fatalf("program has not enough statements. got%d",
-			len(program.Statements))
-	}
+	// added for readability
+	// could add something that parses the number of statements by counting the number of newline characters maybe?
+	expectedLength := 1
+	helper_functions.CheckProgramLength(t, len(program.Statements), expectedLength)
 
 	stmt, ok := program.Statements[0].(*ast.ExpressionStatement)
 
@@ -180,8 +179,9 @@ func TestIntegerLiteralExpression(t *testing.T) {
 	program := p.ParseProgram()
 	checkParserErrors(t, p)
 
-	if len(program.Statements) != 1 {
-		t.Fatalf("program doesn't have enough statements. got=%d",
-			len(program.Statements))
-	}
+	// added for readability
+	// could add something that parses the number of statements by counting the number of newline characters maybe?
+	expectedLength := 1
+	helper_functions.CheckProgramLength(t, len(program.Statements), expectedLength)
+
 }
