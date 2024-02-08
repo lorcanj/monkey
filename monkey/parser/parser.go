@@ -7,12 +7,51 @@ import (
 	"monkey/token"
 )
 
+const (
+	// here iota gives the below constants incrementing numbers as values
+	// the underscore takes the first value (0) so the consts start from 1
+	// can use these numbers to assign the order of operations
+	_ int = iota
+	LOWEST
+	EQUALS      // ==
+	LESSGREATER // > or <
+	SUM         // +
+	PRODUCT     // *
+	PREFIX      // -X or !X
+	CALL        // myFunction(X)
+)
+
 type Parser struct {
-	l *lexer.Lexer
+	l      *lexer.Lexer
+	errors []string
 
 	curToken  token.Token
 	peekToken token.Token
-	errors    []string
+
+	// these will store a map of tokenTypes to parsing functions
+	// means that we might have to parse the same token differently depending on
+	// whether it appears prefix or infix in our statements
+	prefixParseFns map[token.TokenType]prefixParseFn
+	infixParseFns  map[token.TokenType]infixParseFn
+}
+
+// we can create types in Go, as shown below
+// of the form identifier Source
+// in the example below, both of the types are functions that return
+// an ast.Expression, however for infix this also requires an ast.Expression as input
+type (
+	prefixParseFn func() ast.Expression
+	infixParseFn  func(ast.Expression) ast.Expression
+)
+
+// slightly confused about whether this means that there is only one function
+// per tokenType
+func (p *Parser) registerPrefix(tokenType token.TokenType, fn prefixParseFn) {
+	p.prefixParseFns[tokenType] = fn
+}
+
+func (p *Parser) registerInfix(tokenType token.TokenType, fn infixParseFn) {
+	p.infixParseFns[tokenType] = fn
 }
 
 func New(l *lexer.Lexer) *Parser {
@@ -23,11 +62,18 @@ func New(l *lexer.Lexer) *Parser {
 		errors: []string{},
 	}
 
+	p.prefixParseFns = make(map[token.TokenType]prefixParseFn)
+	p.registerPrefix(token.IDENT, p.parseIdentifier)
+
 	// Read two tokens, so curToken and peekToken are set
 	p.NextToken()
 	p.NextToken()
 
 	return p
+}
+
+func (p *Parser) parseIdentifier() ast.Expression {
+	return &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal}
 }
 
 func (p *Parser) Errors() []string {
@@ -78,11 +124,13 @@ func (p *Parser) parseStatement() ast.Statement {
 	case token.RETURN:
 		return p.parseReturnStatement()
 	default:
-		return nil
+		return p.parseExpressionStatement()
 	}
 }
 
 func (p *Parser) parseReturnStatement() ast.Statement {
+	// don't need to check whether current token is equal to return here
+	// because this has been checked already further down the function stack
 	stmt := &ast.ReturnStatement{Token: p.curToken}
 
 	p.NextToken()
@@ -141,4 +189,36 @@ func (p *Parser) expectPeek(t token.TokenType) bool {
 		p.peekError(t)
 		return false
 	}
+}
+
+func (p *Parser) parseExpressionStatement() *ast.ExpressionStatement {
+	// should take in the expression and create a new ast node of ExpressionStatement type
+	stmt := &ast.ExpressionStatement{Token: p.curToken}
+
+	// passing in const LOWEST
+	stmt.Expression = p.parseExpression(LOWEST)
+
+	// advancing token if next token is a semi-colon
+	if p.peekTokenIs(token.SEMICOLON) {
+		p.NextToken()
+	}
+	// not failing if expression doesn't end with a semi-colon
+	// which means can add expression like 5 + 5 to REPL
+
+	return stmt
+}
+
+// function to check whether there is a prefix function associated with
+// the token type and calls and returns the result of that call if found
+func (p *Parser) parseExpression(precedence int) ast.Expression {
+
+	// currently will always return nil as the map is empty
+	prefix := p.prefixParseFns[p.curToken.Type]
+
+	if prefix == nil {
+		return nil
+	}
+	leftExp := prefix()
+
+	return leftExp
 }
