@@ -69,11 +69,37 @@ func New(l *lexer.Lexer) *Parser {
 	p.registerPrefix(token.EXCLAM, p.parsePrefixExpression)
 	p.registerPrefix(token.MINUS, p.parsePrefixExpression)
 
+	p.infixParseFns = make(map[token.TokenType]infixParseFn)
+	p.registerInfix(token.PLUS, p.parseInfixExpression)
+	p.registerInfix(token.MINUS, p.parseInfixExpression)
+	p.registerInfix(token.SLASH, p.parseInfixExpression)
+	p.registerInfix(token.ASTERISK, p.parseInfixExpression)
+	p.registerInfix(token.EQ, p.parseInfixExpression)
+	p.registerInfix(token.NOT_EQ, p.parseInfixExpression)
+	p.registerInfix(token.LT, p.parseInfixExpression)
+	p.registerInfix(token.GT, p.parseInfixExpression)
+
 	// Read two tokens, so curToken and peekToken are set
 	p.NextToken()
 	p.NextToken()
 
 	return p
+}
+
+func (p *Parser) parseInfixExpression(left ast.Expression) ast.Expression {
+	expression := &ast.InfixExpression{
+		Token:    p.curToken,
+		Operator: p.curToken.Literal,
+		Left:     left,
+	}
+	// precedence here is the precedence of the operator token
+	// which is then passed when constructing the RHS expression
+	// and used to created the precedence
+	precedence := p.curPrecedence()
+	p.NextToken()
+	expression.Right = p.parseExpression(precedence)
+
+	return expression
 }
 
 func (p *Parser) parseIdentifier() ast.Expression {
@@ -216,8 +242,6 @@ func (p *Parser) parseExpressionStatement() *ast.ExpressionStatement {
 // the token type and calls and returns the result of that call if found
 func (p *Parser) parseExpression(precedence int) ast.Expression {
 
-	// now the parseExpression function will use the parsing function that we have
-	// added to the prefixParse map that was added when Parse was initialised
 	prefix := p.prefixParseFns[p.curToken.Type]
 
 	if prefix == nil {
@@ -225,6 +249,24 @@ func (p *Parser) parseExpression(precedence int) ast.Expression {
 		return nil
 	}
 	leftExp := prefix()
+	// now want to check whether we have reached the end and just return
+	// or need to continue and therefor pass in leftExp to the parseInfix function
+
+	// this is a loop!
+	// will loop and keep parsing until it either hits the end (which makes sense)
+	// will also stop parsing when it hits an operator which has a lower precedence
+	// will want to run through this step by step to double check how it works
+	for !p.peekTokenIs(token.SEMICOLON) && precedence < p.peekPrecedence() {
+		infix := p.infixParseFns[p.peekToken.Type]
+
+		// in what situation would this occur
+		if infix == nil {
+			return leftExp
+		}
+		p.NextToken()
+		// now want to recursively call?
+		leftExp = infix(leftExp)
+	}
 
 	return leftExp
 }
@@ -260,4 +302,30 @@ func (p *Parser) parsePrefixExpression() ast.Expression {
 	expression.Right = p.parseExpression(PREFIX)
 
 	return expression
+}
+
+var precedences = map[token.TokenType]int{
+	token.EQ:       EQUALS,
+	token.NOT_EQ:   EQUALS,
+	token.LT:       LESSGREATER,
+	token.GT:       LESSGREATER,
+	token.PLUS:     SUM,
+	token.MINUS:    SUM,
+	token.SLASH:    PRODUCT,
+	token.ASTERISK: PRODUCT,
+}
+
+func (p *Parser) peekPrecedence() int {
+	// want to check the next token
+	if p, ok := precedences[p.peekToken.Type]; ok {
+		return p
+	}
+	return LOWEST
+}
+
+func (p *Parser) curPrecedence() int {
+	if p, ok := precedences[p.curToken.Type]; ok {
+		return p
+	}
+	return LOWEST
 }
